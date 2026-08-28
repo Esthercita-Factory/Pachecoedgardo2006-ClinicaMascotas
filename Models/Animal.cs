@@ -1,8 +1,13 @@
 namespace ClinicaSalud.Models;
 
+/*
+ * CONVENCIONES DE CODIFICACIÓN (TASK 6):
+ * - Clases y Propiedades: PascalCase
+ * - Campos privados: _camelCase
+ * - Parámetros: camelCase
+ */
 public abstract class Animal
 {
-    // TASK 4: Encapsulación con campos privados y modificadores de acceso
     private string _nombre = string.Empty;
     private int _edad;
     private string _especie = string.Empty;
@@ -34,6 +39,5 @@ public abstract class Animal
         Especie = especie;
     }
 
-    // TASK 5: Polimorfismo - Método abstracto a ser sobrescrito por las clases derivadas
     public abstract string EmitirSonido();
 }

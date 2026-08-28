@@ -2,7 +2,6 @@ using System;
 
 namespace ClinicaSalud.Models;
 
-// TASK 5: Herencia (Mascota hereda de Animal) y TASK 6: Implementación de IRegistrable
 public class Mascota : Animal, IRegistrable
 {
     private string _raza = string.Empty;
@@ -21,7 +20,6 @@ public class Mascota : Animal, IRegistrable
         Raza = raza;
     }
 
-    // TASK 5: Polimorfismo - Sobrescritura de EmitirSonido()
     public override string EmitirSonido()
     {
         return Especie.ToLower() switch
@@ -33,15 +31,13 @@ public class Mascota : Animal, IRegistrable
         };
     }
 
-    // TASK 2: Método para mostrar información de la mascota
     public void MostrarInformacion()
     {
         Console.WriteLine($"      [Mascota] Nombre: {Nombre} | Especie: {Especie} | Raza: {Raza} | Edad: {Edad} años | Sonido: {EmitirSonido()}");
     }
 
-    // TASK 6: Implementación de la interfaz IRegistrable
     public void Registrar()
     {
-        Console.WriteLine($"[Registro IRegistrable] Mascota '{Nombre}' ({Especie}) registrada correctamente.");
+        Console.WriteLine($"[Registro IRegistrable] Mascota '{Nombre}' ({Especie}) registrada.");
     }
 }

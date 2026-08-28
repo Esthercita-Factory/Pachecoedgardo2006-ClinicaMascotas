@@ -1,8 +1,8 @@
-# Clínica Veterinaria Salud+ (Semana 4)
+# Clínica Veterinaria Salud+ (Semana 5)
 
-Aplicación de consola en .NET enfocada en interfaces múltiples, manejo estructurado de excepciones, depuración y sistema de logging.
+Aplicación de consola en .NET enfocada en programación asíncrona (`async`/`await`), gestión concurrente con `Task` (`Task.WhenAll`, `Task.WhenAny`), manejo de excepciones de dominio y convenciones de codificación de C#.
 
-## Diagrama de Clases UML (Actualizado Semana 4)
+## Diagrama de Arquitectura de Clases UML
 
 ```mermaid
 classDiagram
@@ -81,38 +81,55 @@ classDiagram
         <<System>>
     }
 
-    class MascotaNoEncontradaException {
-        +NombreMascotaBuscada: string
-    }
-
     class PacienteNoEncontradoException {
         +IdBuscado: int
     }
 
-    %% Relaciones de herencia e interfaces
+    class MascotaNoEncontradaException {
+        +NombreMascotaBuscada: string
+    }
+
+    class LoggerService {
+        <<static>>
+        +LogErrorAsync(string, Exception?) Task
+        +LogInfoAsync(string) Task
+    }
+
+    class PacienteService {
+        <<static>>
+        +RegistrarPacienteAsync(List~Paciente~) Task
+        +EjecutarProcesosParalelosAsync(List~Paciente~) Task
+        +DemostrarWhenAllVsWhenAnyAsync() Task
+        +SimularAtencionConcurrenteAsync(List~Paciente~) Task
+    }
+
     Animal <|-- Mascota : Herencia
     IRegistrable <|.. Mascota : Implementa
     IRegistrable <|.. Paciente : Implementa
-    INotificable <|.. Paciente : Implementa (Múltiples Interfaces)
-    Paciente "1" o-- "0..*" Mascota : Asociación
+    INotificable <|.. Paciente : Implementa
+    Paciente "1" o-- "0..*" Mascota : Agregación / Asociación
+    
     IAtendible <|.. ServicioVeterinario : Implementa
     ServicioVeterinario <|-- ConsultaGeneral : Herencia
     ServicioVeterinario <|-- Vacunacion : Herencia
 
-    Exception <|-- MascotaNoEncontradaException : Herencia
     Exception <|-- PacienteNoEncontradoException : Herencia
+    Exception <|-- MascotaNoEncontradaException : Herencia
 ```
 
-## Novedades y Decisiones de Diseño
+## Fundamentos y Buenas Prácticas Asíncronas
 
-### 1. Interfaces vs Clases Abstractas
-- `IRegistrable`: Contrato uniforme para persistencia en consola/memoria (`Paciente` y `Mascota`).
-- `INotificable`: Contrato de comunicación implementado en `Paciente`.
-- `IAtendible`: Contrato desacoplado para servicios veterinarios.
-- `Paciente` implementa **múltiples interfaces** (`IRegistrable` e `INotificable`).
-- `ServicioVeterinario` combina clase base abstracta con la interfaz `IAtendible` para compartir estado (`CostoBase`, `NombreServicio`).
+### 1. `async` / `await`
+- Permite liberar el hilo de ejecución principal durante operaciones de entrada/salida (*I/O-bound*) simuladas con `Task.Delay` o persistencia asíncrona de archivos (`File.AppendAllTextAsync`).
 
-### 2. Manejo de Excepciones y Logging
-- Excepciones de dominio: `MascotaNoEncontradaException` y `PacienteNoEncontradoException`.
-- Bloques `try-catch-finally` en todas las operaciones.
-- `LoggerService`: Registro persistente de errores en el archivo `clinica_errores.log` con fecha/hora y traza de error.
+### 2. Gestión de Tareas Paralelas
+- **`Task.WhenAll`**: Ejecuta múltiples tareas independientes en paralelo (carga de historial médico, agendamiento de cita y envío de SMS), reduciendo drásticamente el tiempo total de respuesta.
+- **`Task.WhenAny`**: Permite reaccionar al primer resultado disponible entre múltiples servicios asíncronos en competencia (ejemplo: respuesta más rápida de laboratorios).
+
+### 3. Buenas Prácticas y Convenciones de C#
+- **Cero bloqueos síncronos:** No se utiliza `.Result` ni `.Wait()`, evitando bloqueos del hilo principal (*deadlocks*).
+- **Sufijo `Async`:** Todos los métodos asíncronos llevan el sufijo correspondiente (`RegistrarPacienteAsync`, `LogErrorAsync`).
+- **Nomenclatura uniforme:**
+  - `PascalCase` para clases, métodos e interfaces.
+  - `camelCase` para variables y parámetros.
+  - `_camelCase` para atributos privados.

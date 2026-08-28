@@ -1,245 +1,231 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using ClinicaSalud.Models;
 
 namespace ClinicaSalud.Services;
 
+/*
+ * FUNDAMENTOS DE PROGRAMACIÓN ASÍNCRONA (TASK 1):
+ * - La programación asíncrona (async/await) resuelve el problema de bloqueo de hilos durante operaciones
+ *   intensivas de Entrada/Salida (I/O) como lectura de archivos, bases de datos o peticiones web.
+ * - En lugar de congelar la interfaz o la aplicación esperando una respuesta, el hilo se libera para atender
+ *   otras tareas hasta que la operación asíncrona finaliza.
+ * - BUENA PRÁCTICA (TASK 5): Siempre propagar 'await' y evitar '.Result' o '.Wait()' que causan bloqueos (deadlocks).
+ */
 public static class PacienteService
 {
-    // TASK 2 y 5: Registrar paciente con try-catch-finally y validaciones
-    public static void RegistrarPaciente(List<Paciente> lista)
+    // =========================================================================
+    // TASK 2: MÉTODO ASÍNCRONO CON ASYNC / AWAIT (Simulación no bloqueante)
+    // =========================================================================
+
+    public static async Task RegistrarPacienteAsync(List<Paciente> listaPacientes)
     {
-        Console.WriteLine("\n--- REGISTRO DE NUEVO PACIENTE Y MASCOTA ---");
+        Console.WriteLine("\n--- REGISTRO ASÍNCRONO DE PACIENTE Y MASCOTA ---");
 
         try
         {
             string nombre = LeerTextoNoVacio("Nombre del paciente/dueño: ");
             int edad = LeerEntero("Edad: ");
             string direccion = LeerTextoNoVacio("Dirección: ");
-            string telefono = LeerTextoNoVacio("Teléfono de contacto: ");
+            string telefono = LeerTextoNoVacio("Teléfono: ");
 
-            int nuevoId = lista.Count > 0 ? lista.Max(p => p.Id) + 1 : 1;
+            int nuevoId = listaPacientes.Count > 0 ? listaPacientes.Max(p => p.Id) + 1 : 1;
             var paciente = new Paciente(nuevoId, nombre, edad, direccion, telefono);
 
-            Console.WriteLine("\n--- DATOS DE LA MASCOTA PRINCIPAL ---");
+            Console.WriteLine("\n--- DATOS DE LA MASCOTA ---");
             Mascota mascota = CrearMascotaDesdeConsola();
             paciente.AgregarMascota(mascota);
 
-            Console.Write("¿Desea registrar una mascota adicional? (s/n): ");
-            if (Console.ReadLine()?.Trim().ToLower() == "s")
-            {
-                Mascota otraMascota = CrearMascotaDesdeConsola();
-                paciente.AgregarMascota(otraMascota);
-            }
+            // Mensajes visuales del ciclo asíncrono
+            Console.WriteLine("\n[1/3] Iniciando guardado asíncrono en base de datos / almacenamiento...");
+            
+            // Simulación no bloqueante de I/O
+            await Task.Delay(1500); 
 
-            lista.Add(paciente);
+            Console.WriteLine("[2/3] Procesando y validando persistencia en segundo plano...");
+            await Task.Delay(1000);
 
-            // TASK 2: Invocación polimórfica de IRegistrable
+            listaPacientes.Add(paciente);
             paciente.Registrar();
-            foreach (var m in paciente.Mascotas)
-            {
-                m.Registrar();
-            }
+            mascota.Registrar();
 
-            LoggerService.LogInfo($"Paciente #{paciente.Id} registrado exitosamente.");
-            Console.WriteLine($"\n¡Paciente #{paciente.Id} guardado con éxito!");
+            await LoggerService.LogInfoAsync($"Paciente #{paciente.Id} '{paciente.Nombre}' registrado asíncronamente.");
+
+            Console.WriteLine($"[3/3] ¡Éxito! Paciente #{paciente.Id} guardado de forma no bloqueante.");
         }
-        catch (Exception ex)
+        catch (Exception excepcion)
         {
-            LoggerService.LogError("Error durante el registro del paciente.", ex);
-            Console.WriteLine($"[Error al registrar]: {ex.Message}");
+            await LoggerService.LogErrorAsync("Error en RegistrarPacienteAsync", excepcion);
+            Console.WriteLine($"[Error]: {excepcion.Message}");
         }
         finally
         {
-            Console.WriteLine("[Fin del proceso de registro]");
+            Console.WriteLine("[Operación de registro finalizada]");
         }
     }
 
-    // TASK 5: Buscar mascota con excepción personalizada MascotaNoEncontradaException
-    public static void BuscarMascotaPorNombre(List<Paciente> lista)
-    {
-        Console.WriteLine("\n--- BÚSQUEDA DE MASCOTA POR NOMBRE ---");
-        Console.Write("Ingrese el nombre de la mascota a buscar: ");
-        string? nombreBuscado = Console.ReadLine();
+    // =========================================================================
+    // TASK 3: TAREAS PARALELAS CON Task.WhenAll
+    // =========================================================================
 
-        try
-        {
-            if (string.IsNullOrWhiteSpace(nombreBuscado))
-            {
-                throw new ArgumentException("El nombre de la mascota no puede estar vacío.");
-            }
-
-            var pacienteDueño = lista.FirstOrDefault(p => p.Mascotas.Any(m => m.Nombre.Equals(nombreBuscado.Trim(), StringComparison.OrdinalIgnoreCase)));
-
-            if (pacienteDueño == null)
-            {
-                // TASK 5: Lanzamiento de excepción personalizada
-                throw new MascotaNoEncontradaException(nombreBuscado.Trim());
-            }
-
-            var mascotaEncontrada = pacienteDueño.Mascotas.First(m => m.Nombre.Equals(nombreBuscado.Trim(), StringComparison.OrdinalIgnoreCase));
-
-            Console.WriteLine("\n[Mascota Encontrada]");
-            mascotaEncontrada.MostrarInformacion();
-            Console.WriteLine($"Dueño responsable: {pacienteDueño.Nombre} (Tel: {pacienteDueño.Telefono})");
-        }
-        catch (MascotaNoEncontradaException ex)
-        {
-            LoggerService.LogError($"Búsqueda fallida de mascota: {ex.NombreMascotaBuscada}", ex);
-            Console.WriteLine($"[Aviso]: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            LoggerService.LogError("Error inesperado en búsqueda de mascota.", ex);
-            Console.WriteLine($"[Error]: {ex.Message}");
-        }
-        finally
-        {
-            Console.WriteLine("[Búsqueda finalizada]");
-        }
-    }
-
-    // TASK 3: Demostrar interfaz INotificable
-    public static void EnviarRecordatorioCita(List<Paciente> lista)
-    {
-        Console.WriteLine("\n--- ENVIAR RECORDATORIO DE CITA (INotificable) ---");
-        int id = LeerEntero("Ingrese el ID del paciente/dueño a notificar: ");
-
-        try
-        {
-            var paciente = lista.FirstOrDefault(p => p.Id == id);
-            if (paciente == null)
-            {
-                throw new PacienteNoEncontradoException(id);
-            }
-
-            string mensaje = $"Estimado/a {paciente.Nombre}, le recordamos la cita médica de su mascota para el día de mañana.";
-
-            // Invocación a través de la interfaz INotificable
-            INotificable canalNotificacion = paciente;
-            canalNotificacion.EnviarNotificacion(mensaje);
-
-            LoggerService.LogInfo($"Notificación enviada a paciente #{id}.");
-        }
-        catch (PacienteNoEncontradoException ex)
-        {
-            LoggerService.LogError($"Fallo al enviar notificación: Paciente ID {ex.IdBuscado} no existe.", ex);
-            Console.WriteLine($"[Aviso]: {ex.Message}");
-        }
-        finally
-        {
-            Console.WriteLine("[Proceso de notificación concluido]");
-        }
-    }
-
-    // TASK 2: Demostrar interfaz IAtendible con servicios veterinarios
-    public static void AtenderServicioVeterinario(List<Paciente> lista)
-    {
-        Console.WriteLine("\n--- ATENCIÓN DE SERVICIO VETERINARIO (IAtendible) ---");
-        int id = LeerEntero("Ingrese el ID del paciente/dueño: ");
-
-        try
-        {
-            var paciente = lista.FirstOrDefault(p => p.Id == id);
-            if (paciente == null)
-            {
-                throw new PacienteNoEncontradoException(id);
-            }
-
-            if (!paciente.Mascotas.Any())
-            {
-                throw new InvalidOperationException($"El paciente {paciente.Nombre} no tiene mascotas registradas.");
-            }
-
-            var mascota = paciente.Mascotas.First();
-
-            Console.WriteLine("\nSeleccione el servicio veterinario:");
-            Console.WriteLine("1. Consulta General ($35.00)");
-            Console.WriteLine("2. Vacunación ($25.00)");
-            Console.Write("Opción: ");
-            string? opcion = Console.ReadLine();
-
-            // Uso polimórfico de la interfaz IAtendible
-            IAtendible servicio = opcion == "2"
-                ? new Vacunacion(LeerTextoNoVacio("Nombre de la vacuna aplicada: "))
-                : new ConsultaGeneral { Diagnostico = LeerTextoNoVacio("Diagnóstico / Motivo de consulta: ") };
-
-            servicio.Atender(paciente, mascota);
-            LoggerService.LogInfo($"Servicio '{servicio.NombreServicio}' atendido para mascota '{mascota.Nombre}'.");
-        }
-        catch (PacienteNoEncontradoException ex)
-        {
-            LoggerService.LogError($"Fallo al atender servicio: {ex.Message}", ex);
-            Console.WriteLine($"[Aviso]: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            LoggerService.LogError("Error durante la atención médica.", ex);
-            Console.WriteLine($"[Error]: {ex.Message}");
-        }
-        finally
-        {
-            Console.WriteLine("[Atención médica finalizada]");
-        }
-    }
-
-    // TASK 4: Escenario de depuración (Breakpoints e inspección de variables)
-    public static void ProbarEscenarioDepuracion()
+    public static async Task EjecutarProcesosParalelosAsync(List<Paciente> listaPacientes)
     {
         Console.WriteLine("\n==========================================");
-        Console.WriteLine("     ESCENARIO DE DEPURACIÓN Y DEBUG      ");
+        Console.WriteLine("    PROCESOS CLÍNICOS EN PARALELO (TASK)  ");
         Console.WriteLine("==========================================");
-        Console.WriteLine("-> Coloque un Breakpoint (Punto de interrupción) en la siguiente línea:");
-        Console.WriteLine("   int totalPacientes = 10;");
 
-        // Breakpoint sugerido aquí:
-        int totalPacientes = 10;
-        int divisor = 0; // Provocamos división por cero controlada para depurar
-
-        Console.WriteLine($"Variables actuales en memoria: totalPacientes = {totalPacientes}, divisor = {divisor}");
-
-        try
+        if (!listaPacientes.Any())
         {
-            Console.WriteLine("Calculando promedio de atención (totalPacientes / divisor)...");
-            int promedio = totalPacientes / divisor; // Lanza DivideByZeroException
-            Console.WriteLine($"Promedio calculado: {promedio}");
+            Console.WriteLine("No hay pacientes registrados para procesar.");
+            return;
         }
-        catch (DivideByZeroException ex)
+
+        var paciente = listaPacientes.First();
+        Console.WriteLine($"Ejecutando 3 tareas simultáneas para el paciente '{paciente.Nombre}' (ID: {paciente.Id})...\n");
+
+        var cronometro = Stopwatch.StartNew();
+
+        // Lanzamos las 3 tareas en paralelo
+        Task<string> tareaHistorial = CargarHistorialClinicoAsync(paciente.Id);
+        Task<string> tareaCita = AgendarCitaAsync(paciente.Id);
+        Task<string> tareaNotificacion = EnviarNotificacionAsync(paciente.Telefono, "Su cita ha sido confirmada.");
+
+        // TASK 3: Esperamos la finalización de todas las tareas concurrentes
+        string[] resultados = await Task.WhenAll(tareaHistorial, tareaCita, tareaNotificacion);
+
+        cronometro.Stop();
+
+        Console.WriteLine("\nResultados obtenidos de la ejecución concurrente:");
+        foreach (var resultado in resultados)
         {
-            LoggerService.LogError("Error de división por cero detectado y controlado en modo depuración.", ex);
-            Console.WriteLine($"\n[Excepción capturada con éxito]: {ex.GetType().Name} -> {ex.Message}");
-            Console.WriteLine("[Depuración]: Se ha verificado que el divisor era 0 antes de realizar la operación.");
+            Console.WriteLine($"  ✔ {resultado}");
         }
-        finally
+
+        Console.WriteLine($"\n[Rendimiento]: Todas las tareas completadas en paralelo en solo {cronometro.ElapsedMilliseconds} ms.");
+    }
+
+    private static async Task<string> CargarHistorialClinicoAsync(int pacienteId)
+    {
+        Console.WriteLine("  -> [Inicio] Cargando historial clínico desde servidor central...");
+        await Task.Delay(1800); // Simula consulta a base de datos
+        Console.WriteLine("  -> [Fin] Historial clínico cargado.");
+        return $"Historial médico cargado correctamente para ID #{pacienteId}";
+    }
+
+    private static async Task<string> AgendarCitaAsync(int pacienteId)
+    {
+        Console.WriteLine("  -> [Inicio] Verificando disponibilidad de agenda veterinaria...");
+        await Task.Delay(1200); // Simula validación de agenda
+        Console.WriteLine("  -> [Fin] Espacio de cita reservado.");
+        return $"Cita médica programada con éxito para ID #{pacienteId}";
+    }
+
+    private static async Task<string> EnviarNotificacionAsync(string telefono, string mensaje)
+    {
+        Console.WriteLine("  -> [Inicio] Conectando con pasarela de mensajería SMS/Email...");
+        await Task.Delay(1500); // Simula servicio externo de notificaciones
+        Console.WriteLine("  -> [Fin] Notificación entregada.");
+        return $"Mensaje enviado a '{telefono}': \"{mensaje}\"";
+    }
+
+    // =========================================================================
+    // TASK 4: Task.WhenAll vs Task.WhenAny (Concurrencia y Competencia)
+    // =========================================================================
+
+    public static async Task DemostrarWhenAllVsWhenAnyAsync()
+    {
+        Console.WriteLine("\n==========================================");
+        Console.WriteLine("    COMPARATIVA: Task.WhenAll vs WhenAny  ");
+        Console.WriteLine("==========================================");
+
+        Console.WriteLine("Escenario: Consultando resultados de laboratorio a 3 laboratorios externos...");
+
+        // Simulamos 3 servicios de laboratorio con diferentes tiempos de respuesta
+        Task<string> labA = ConsultarLaboratorioAsync("Laboratorio Central", 2500);
+        Task<string> labB = ConsultarLaboratorioAsync("Laboratorio Express", 900);
+        Task<string> labC = ConsultarLaboratorioAsync("Laboratorio Metropolitano", 1600);
+
+        var tareasLaboratorio = new List<Task<string>> { labA, labB, labC };
+
+        // 1. Task.WhenAny: Atiende la primera respuesta que llegue
+        Console.WriteLine("\n1. [Task.WhenAny] Esperando la respuesta más rápida para atención inmediata:");
+        Task<string> tareaMasRapida = await Task.WhenAny(tareasLaboratorio);
+        string resultadoRapido = await tareaMasRapida;
+        Console.WriteLine($"   ¡Primer resultado disponible recibido!: {resultadoRapido}");
+
+        // 2. Task.WhenAll: Espera que todos los laboratorios terminen su informe
+        Console.WriteLine("\n2. [Task.WhenAll] Esperando a que el resto de los laboratorios finalicen...");
+        string[] todosLosResultados = await Task.WhenAll(tareasLaboratorio);
+        Console.WriteLine("   Todos los reportes han sido consolidados:");
+        foreach (var r in todosLosResultados)
         {
-            Console.WriteLine("[Bloque finally ejecutado tras la depuración]");
+            Console.WriteLine($"   - {r}");
         }
     }
 
-    public static void ListarPacientes(List<Paciente> lista)
+    private static async Task<string> ConsultarLaboratorioAsync(string nombreLab, int demoraMs)
+    {
+        await Task.Delay(demoraMs);
+        return $"{nombreLab} (Completado en {demoraMs}ms)";
+    }
+
+    // Simulación de atención concurrente de pacientes
+    public static async Task SimularAtencionConcurrenteAsync(List<Paciente> listaPacientes)
+    {
+        Console.WriteLine("\n==========================================");
+        Console.WriteLine("     ATENCIÓN CONCURRENTE DE MASCOTAS     ");
+        Console.WriteLine("==========================================");
+
+        var mascotas = listaPacientes.SelectMany(p => p.Mascotas).ToList();
+
+        if (!mascotas.Any())
+        {
+            Console.WriteLine("No hay mascotas registradas para atender.");
+            return;
+        }
+
+        Console.WriteLine($"Atendiendo {mascotas.Count} mascotas simultáneamente en diferentes consultorios:\n");
+
+        var tareasAtencion = mascotas.Select(async m =>
+        {
+            Console.WriteLine($" [Consultorio] Iniciando revisión de '{m.Nombre}' ({m.Especie})...");
+            int tiempoAtencion = new Random().Next(800, 2000);
+            await Task.Delay(tiempoAtencion);
+            Console.WriteLine($" [Consultorio] ✔ '{m.Nombre}' fue atendido exitosamente ({tiempoAtencion}ms). Sonido: {m.EmitirSonido()}");
+        });
+
+        // Espera a que todas las mascotas terminen su consulta
+        await Task.WhenAll(tareasAtencion);
+
+        Console.WriteLine("\n¡Todas las consultas concurrentes han concluido satisfactoriamente!");
+    }
+
+    public static void ListarPacientes(List<Paciente> listaPacientes)
     {
         Console.WriteLine("\n==========================================");
         Console.WriteLine("       LISTA DE PACIENTES Y MASCOTAS      ");
         Console.WriteLine("==========================================");
 
-        if (!lista.Any())
+        if (!listaPacientes.Any())
         {
             Console.WriteLine("No hay pacientes registrados.");
             return;
         }
 
-        foreach (var p in lista)
+        foreach (var p in listaPacientes)
         {
             p.MostrarInformacion();
         }
     }
 
-    // Validaciones
+    // Métodos auxiliares de entrada
     private static Mascota CrearMascotaDesdeConsola()
     {
         string nombreMascota = LeerTextoNoVacio("Nombre de la mascota: ");
-        string especie = LeerTextoNoVacio("Especie (ej. Perro, Gato, Ave): ");
+        string especie = LeerTextoNoVacio("Especie (ej. Perro, Gato, Loro): ");
         Console.Write("Raza (opcional): ");
         string raza = Console.ReadLine()?.Trim() ?? string.Empty;
         int edadMascota = LeerEntero("Edad de la mascota (en años): ");

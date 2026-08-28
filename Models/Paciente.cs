@@ -3,10 +3,6 @@ using System.Collections.Generic;
 
 namespace ClinicaSalud.Models;
 
-/*
- * TASK 3: Implementación de múltiples interfaces (IRegistrable e INotificable)
- * - Muestra la flexibilidad de C# donde una clase puede asumir múltiples contratos de comportamiento.
- */
 public class Paciente : IRegistrable, INotificable
 {
     private int _id;
@@ -71,11 +67,11 @@ public class Paciente : IRegistrable, INotificable
         Console.WriteLine($"\n[Paciente ID: {Id}] Dueño: {Nombre} | Edad: {Edad} años | Teléfono: {Telefono} | Dirección: {Direccion}");
         if (Mascotas.Count == 0)
         {
-            Console.WriteLine("   (No tiene mascotas asociadas)");
+            Console.WriteLine("   (No tiene mascotas registradas)");
         }
         else
         {
-            Console.WriteLine($"   Mascotas registradas ({Mascotas.Count}):");
+            Console.WriteLine($"   Mascotas asociadas ({Mascotas.Count}):");
             foreach (var mascota in Mascotas)
             {
                 mascota.MostrarInformacion();
@@ -83,15 +79,13 @@ public class Paciente : IRegistrable, INotificable
         }
     }
 
-    // TASK 2: Implementación de IRegistrable
     public void Registrar()
     {
         Console.WriteLine($"[Registro IRegistrable] Paciente (Dueño) '{Nombre}' (ID: {Id}) registrado con {Mascotas.Count} mascota(s).");
     }
 
-    // TASK 3: Implementación de INotificable
     public void EnviarNotificacion(string mensaje)
     {
-        Console.WriteLine($"\n[Notificación SMS/Email a {Telefono} ({Nombre})]: \"{mensaje}\"");
+        Console.WriteLine($"\n[Notificación a {Telefono} ({Nombre})]: \"{mensaje}\"");
     }
 }
