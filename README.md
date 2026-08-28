@@ -6,6 +6,7 @@ Aplicación de consola en .NET enfocada en programación asíncrona (`async`/`aw
 
 ```mermaid
 classDiagram
+    %% INTERFACES
     class IRegistrable {
         <<interface>>
         +Registrar() void
@@ -20,9 +21,10 @@ classDiagram
         <<interface>>
         +NombreServicio: string
         +CostoBase: decimal
-        +Atender(Paciente, Mascota) void
+        +Atender(Paciente paciente, Mascota mascota) void
     }
 
+    %% JERARQUÍA DE ANIMALES
     class Animal {
         <<abstract>>
         -string _nombre
@@ -31,17 +33,22 @@ classDiagram
         +Nombre: string
         +Edad: int
         +Especie: string
+        #Animal()
+        #Animal(string nombre, int edad, string especie)
         +EmitirSonido()* string
     }
 
     class Mascota {
         -string _raza
         +Raza: string
+        +Mascota()
+        +Mascota(string nombre, int edad, string especie, string raza)
         +EmitirSonido() string
         +MostrarInformacion() void
         +Registrar() void
     }
 
+    %% MODELO PACIENTE (DUEÑO)
     class Paciente {
         -int _id
         -string _nombre
@@ -54,60 +61,74 @@ classDiagram
         +Direccion: string
         +Telefono: string
         +Mascotas: List~Mascota~
-        +AgregarMascota(Mascota) void
+        +Paciente()
+        +Paciente(int id, string nombre, int edad, string direccion, string telefono)
+        +AgregarMascota(Mascota mascota) void
         +MostrarInformacion() void
         +Registrar() void
-        +EnviarNotificacion(string) void
+        +EnviarNotificacion(string mensaje) void
     }
 
+    %% JERARQUÍA DE SERVICIOS
     class ServicioVeterinario {
         <<abstract>>
         +NombreServicio: string
         +CostoBase: decimal
-        +Atender(Paciente, Mascota)* void
+        +Atender(Paciente paciente, Mascota mascota)* void
     }
 
     class ConsultaGeneral {
         +Diagnostico: string
-        +Atender(Paciente, Mascota) void
+        +ConsultaGeneral()
+        +Atender(Paciente paciente, Mascota mascota) void
     }
 
     class Vacunacion {
         +TipoVacuna: string
-        +Atender(Paciente, Mascota) void
+        +Vacunacion(string tipoVacuna)
+        +Atender(Paciente paciente, Mascota mascota) void
     }
 
+    %% EXCEPCIONES DE DOMINIO
     class Exception {
         <<System>>
+        +Message: string
     }
 
     class PacienteNoEncontradoException {
         +IdBuscado: int
+        +PacienteNoEncontradoException(int id)
+        +PacienteNoEncontradoException(string message, Exception inner)
     }
 
     class MascotaNoEncontradaException {
         +NombreMascotaBuscada: string
+        +MascotaNoEncontradaException(string nombreMascota)
+        +MascotaNoEncontradaException(string message, Exception inner)
     }
 
+    %% SERVICIOS ASÍNCRONOS Y LOGS
     class LoggerService {
         <<static>>
-        +LogErrorAsync(string, Exception?) Task
-        +LogInfoAsync(string) Task
+        +LogErrorAsync(string mensaje, Exception? ex)$ Task
+        +LogInfoAsync(string mensaje)$ Task
     }
 
     class PacienteService {
         <<static>>
-        +RegistrarPacienteAsync(List~Paciente~) Task
-        +EjecutarProcesosParalelosAsync(List~Paciente~) Task
-        +DemostrarWhenAllVsWhenAnyAsync() Task
-        +SimularAtencionConcurrenteAsync(List~Paciente~) Task
+        +RegistrarPacienteAsync(List~Paciente~ lista)$ Task
+        +EjecutarProcesosParalelosAsync(List~Paciente~ lista)$ Task
+        +DemostrarWhenAllVsWhenAnyAsync()$ Task
+        +SimularAtencionConcurrenteAsync(List~Paciente~ lista)$ Task
+        +ListarPacientes(List~Paciente~ lista)$ void
     }
 
+    %% RELACIONES
     Animal <|-- Mascota : Herencia
     IRegistrable <|.. Mascota : Implementa
     IRegistrable <|.. Paciente : Implementa
     INotificable <|.. Paciente : Implementa
-    Paciente "1" o-- "0..*" Mascota : Agregación / Asociación
+    Paciente "1" o-- "0..*" Mascota : Agregación (Tiene)
     
     IAtendible <|.. ServicioVeterinario : Implementa
     ServicioVeterinario <|-- ConsultaGeneral : Herencia
