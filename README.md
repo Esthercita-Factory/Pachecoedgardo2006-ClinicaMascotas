@@ -1,18 +1,80 @@
-# Clínica Veterinaria Salud+ (Semana 2)
+# Clínica Veterinaria Salud+ (Semana 3)
 
-Aplicación de consola en .NET enfocada en la gestión de colecciones y consultas avanzadas con LINQ.
+Aplicación de consola en .NET enfocada en Programación Orientada a Objetos (POO), Herencia, Polimorfismo, Encapsulación, Abstracción y Diseño UML.
 
-## Funcionalidades
-- **Gestión de Colecciones:** Operaciones de agregar, modificar, eliminar y listar usando `List<Paciente>` y `Dictionary<int, Paciente>` para búsquedas por ID en $O(1)$.
-- **Consultas con LINQ (Sintaxis de Consulta y Métodos):**
-  - Filtrado y proyección con `Where` y `Select`.
-  - Ordenamiento con `OrderBy` y `OrderByDescending`.
-  - Agrupamiento y conteo con `GroupBy` y `Count` por especie.
-  - Verificaciones y cuantificadores con `Any` y `All`.
-  - Búsqueda de extremos con `First` (paciente más joven y de mayor edad).
-  - Consultas encadenadas y formateo de cadenas (`ToUpper`).
+## Diagrama de Clases UML
 
-## Estructura
-- `Models/`: Modelo `Paciente` con propiedades del dueño y su mascota.
-- `Services/`: Métodos de negocio, validaciones y consultas LINQ comentadas (`PacienteService`).
-- `Program.cs`: Menú interactivo en consola y precarga de datos de prueba.
+```mermaid
+classDiagram
+    class IRegistrable {
+        <<interface>>
+        +Registrar() void
+    }
+
+    class Animal {
+        <<abstract>>
+        -string _nombre
+        -int _edad
+        -string _especie
+        +Nombre: string
+        +Edad: int
+        +Especie: string
+        +EmitirSonido()* string
+    }
+
+    class Mascota {
+        -string _raza
+        +Raza: string
+        +EmitirSonido() string
+        +MostrarInformacion() void
+        +Registrar() void
+    }
+
+    class Paciente {
+        -int _id
+        -string _nombre
+        -int _edad
+        -string _direccion
+        -string _telefono
+        +Id: int
+        +Nombre: string
+        +Edad: int
+        +Direccion: string
+        +Telefono: string
+        +Mascotas: List~Mascota~
+        +AgregarMascota(Mascota) void
+        +MostrarInformacion() void
+        +Registrar() void
+    }
+
+    class ServicioVeterinario {
+        <<abstract>>
+        +NombreServicio: string
+        +CostoBase: decimal
+        +Atender(Paciente, Mascota)* void
+    }
+
+    class ConsultaGeneral {
+        +Diagnostico: string
+        +Atender(Paciente, Mascota) void
+    }
+
+    class Vacunacion {
+        +TipoVacuna: string
+        +Atender(Paciente, Mascota) void
+    }
+
+    Animal <|-- Mascota : Herencia
+    IRegistrable <|.. Mascota : Implementa
+    IRegistrable <|.. Paciente : Implementa
+    Paciente "1" o-- "0..*" Mascota : Asociación (Composición)
+    ServicioVeterinario <|-- ConsultaGeneral : Herencia
+    ServicioVeterinario <|-- Vacunacion : Herencia
+```
+
+## Conceptos de POO Aplicados
+- **Encapsulación:** Atributos privados con propiedades públicas validadas.
+- **Herencia:** `Mascota` hereda de la clase base `Animal`. `ConsultaGeneral` y `Vacunacion` heredan de `ServicioVeterinario`.
+- **Polimorfismo:** Sobrescritura de `EmitirSonido()` en `Mascota` y `Atender()` en servicios veterinarios.
+- **Abstracción:** Clases abstractas `Animal`, `ServicioVeterinario` e interfaz `IRegistrable`.
+- **Relaciones:** Asociación 1 a N (`Paciente` puede tener múltiples `Mascota`).

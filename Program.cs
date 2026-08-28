@@ -3,34 +3,29 @@ using System.Collections.Generic;
 using ClinicaSalud.Models;
 using ClinicaSalud.Services;
 
-// TASK 1: Colecciones en memoria (List y Dictionary)
-List<Paciente> pacientes = new List<Paciente>
-{
-    new Paciente { Id = 1, Nombre = "Carlos Perez", Telefono = "555-1234", Edad = 28, NombreMascota = "Rocky", Especie = "Perro", Raza = "Labrador", Sintoma = "Vacunación anual" },
-    new Paciente { Id = 2, Nombre = "Ana Gómez", Telefono = "555-5678", Edad = 22, NombreMascota = "Michi", Especie = "Gato", Raza = "Sin raza", Sintoma = "Control de parásitos" },
-    new Paciente { Id = 3, Nombre = "Beatriz Torres", Telefono = "555-9012", Edad = 45, NombreMascota = "Toby", Especie = "Perro", Raza = "Beagle", Sintoma = "Dolor en pata derecha" },
-    new Paciente { Id = 4, Nombre = "David Ramirez", Telefono = "555-3456", Edad = 34, NombreMascota = "Lucas", Especie = "Loro", Raza = "Amazona", Sintoma = "Revisión general" }
-};
+// Datos de prueba iniciales (TASK 3: Instanciación y relaciones 1 a N)
+var paciente1 = new Paciente(1, "Carlos Perez", 28, "Av. Central 123", "555-1234");
+paciente1.AgregarMascota(new Mascota("Rocky", 3, "Perro", "Labrador"));
+paciente1.AgregarMascota(new Mascota("Michi", 2, "Gato", "Siamés"));
 
-Dictionary<int, Paciente> pacientesDiccionario = new Dictionary<int, Paciente>();
-foreach (var p in pacientes)
-{
-    pacientesDiccionario[p.Id] = p;
-}
+var paciente2 = new Paciente(2, "Beatriz Torres", 45, "Calle Sol 456", "555-9012");
+paciente2.AgregarMascota(new Mascota("Lucas", 5, "Loro", "Amazona"));
+
+List<Paciente> pacientes = new List<Paciente> { paciente1, paciente2 };
 
 bool salir = false;
 
 while (!salir)
 {
     Console.WriteLine("\n==========================================");
-    Console.WriteLine("    SISTEMA CLÍNICA VETERINARIA SALUD+    ");
+    Console.WriteLine("  CLÍNICA VETERINARIA SALUD+ (POO / UML)  ");
     Console.WriteLine("==========================================");
-    Console.WriteLine("1. Registrar paciente y mascota");
-    Console.WriteLine("2. Listar todos los pacientes");
-    Console.WriteLine("3. Modificar datos de paciente");
-    Console.WriteLine("4. Eliminar paciente");
-    Console.WriteLine("5. Búsqueda rápida por ID (Dictionary)");
-    Console.WriteLine("6. Reportes y consultas con LINQ");
+    Console.WriteLine("1. Registrar paciente (dueño) y mascota(s)");
+    Console.WriteLine("2. Agregar mascota a paciente existente");
+    Console.WriteLine("3. Listar pacientes y sus mascotas");
+    Console.WriteLine("4. Probar Polimorfismo (EmitirSonido en Animales)");
+    Console.WriteLine("5. Probar Abstracción (Servicios Veterinarios)");
+    Console.WriteLine("6. Probar Interfaz (IRegistrable)");
     Console.WriteLine("7. Salir");
     Console.Write("Seleccione una opción: ");
 
@@ -39,22 +34,22 @@ while (!salir)
     switch (opcion)
     {
         case "1":
-            PacienteService.RegistrarPaciente(pacientes, pacientesDiccionario);
+            PacienteService.RegistrarPaciente(pacientes);
             break;
         case "2":
-            PacienteService.ListarPacientes(pacientes);
+            PacienteService.AgregarMascotaAPaciente(pacientes);
             break;
         case "3":
-            PacienteService.ModificarPaciente(pacientes, pacientesDiccionario);
+            PacienteService.ListarPacientesYMascotas(pacientes);
             break;
         case "4":
-            PacienteService.EliminarPaciente(pacientes, pacientesDiccionario);
+            PacienteService.DemostrarPolimorfismoSonidos(pacientes);
             break;
         case "5":
-            PacienteService.BuscarPorIdEnDiccionario(pacientesDiccionario);
+            PacienteService.DemostrarServiciosVeterinarios(pacientes);
             break;
         case "6":
-            PacienteService.EjecutarConsultasLinq(pacientes);
+            PacienteService.DemostrarInterfazRegistrable(pacientes);
             break;
         case "7":
             salir = true;

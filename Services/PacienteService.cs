@@ -7,197 +7,196 @@ namespace ClinicaSalud.Services;
 
 public static class PacienteService
 {
-    // ==========================================
-    // TASK 1: GESTIÓN DE COLECCIONES (List y Dictionary)
-    // ==========================================
-
-    public static void RegistrarPaciente(List<Paciente> lista, Dictionary<int, Paciente> diccionario)
+    // TASK 2 y 3: Registro de paciente con mascota(s)
+    public static void RegistrarPaciente(List<Paciente> lista)
     {
-        Console.WriteLine("\n--- REGISTRAR PACIENTE Y MASCOTA ---");
+        Console.WriteLine("\n--- REGISTRO DE NUEVO PACIENTE (DUEÑO) ---");
 
-        string nombre = LeerTextoNoVacio("Nombre del dueño: ");
-        string telefono = LeerTextoNoVacio("Teléfono: ");
-        int edad = LeerEntero("Edad del dueño: ");
-        string nombreMascota = LeerTextoNoVacio("Nombre de la mascota: ");
-        string especie = LeerTextoNoVacio("Especie (ej. Perro, Gato): ");
-        Console.Write("Raza (deje vacío si no tiene): ");
-        string raza = Console.ReadLine()?.Trim() ?? string.Empty;
-        string sintoma = LeerTextoNoVacio("Síntoma: ");
+        string nombre = LeerTextoNoVacio("Nombre del paciente/dueño: ");
+        int edad = LeerEntero("Edad: ");
+        string direccion = LeerTextoNoVacio("Dirección: ");
+        string telefono = LeerTextoNoVacio("Teléfono de contacto: ");
 
         int nuevoId = lista.Count > 0 ? lista.Max(p => p.Id) + 1 : 1;
 
-        var nuevoPaciente = new Paciente
+        var paciente = new Paciente(nuevoId, nombre, edad, direccion, telefono);
+
+        Console.WriteLine("\n--- DATOS DE LA MASCOTA PRINCIPAL ---");
+        Mascota mascota = CrearMascotaDesdeConsola();
+        paciente.AgregarMascota(mascota);
+
+        // Opción para registrar más mascotas al mismo dueño
+        Console.Write("¿Desea agregar otra mascota para este paciente? (s/n): ");
+        if (Console.ReadLine()?.Trim().ToLower() == "s")
         {
-            Id = nuevoId,
-            Nombre = nombre,
-            Telefono = telefono,
-            Edad = edad,
-            NombreMascota = nombreMascota,
-            Especie = especie,
-            Raza = string.IsNullOrWhiteSpace(raza) ? "Sin raza" : raza,
-            Sintoma = sintoma
-        };
-
-        lista.Add(nuevoPaciente);
-        diccionario[nuevoId] = nuevoPaciente; // Acceso rápido por clave en Diccionario
-
-        Console.WriteLine($"\n¡Paciente #{nuevoId} registrado con éxito!");
-    }
-
-    public static void ModificarPaciente(List<Paciente> lista, Dictionary<int, Paciente> diccionario)
-    {
-        Console.WriteLine("\n--- MODIFICAR PACIENTE ---");
-        int id = LeerEntero("Ingrese el ID del paciente a modificar: ");
-
-        // Uso de Dictionary para acceso rápido por ID (O(1))
-        if (!diccionario.TryGetValue(id, out var paciente))
-        {
-            Console.WriteLine($"No se encontró ningún paciente con el ID {id}.");
-            return;
+            Mascota otraMascota = CrearMascotaDesdeConsola();
+            paciente.AgregarMascota(otraMascota);
         }
 
-        Console.WriteLine($"Modificando datos de: {paciente.Nombre} (Mascota: {paciente.NombreMascota})");
-        paciente.Telefono = LeerTextoNoVacio($"Nuevo teléfono ({paciente.Telefono}): ");
-        paciente.Sintoma = LeerTextoNoVacio($"Nuevo síntoma ({paciente.Sintoma}): ");
+        lista.Add(paciente);
 
-        Console.WriteLine("¡Paciente modificado con éxito!");
+        // TASK 6: Demostración de interfaz IRegistrable al registrar
+        paciente.Registrar();
+        foreach (var m in paciente.Mascotas)
+        {
+            m.Registrar();
+        }
+
+        Console.WriteLine($"\n¡Paciente #{paciente.Id} y mascota(s) registrados exitosamente!");
     }
 
-    public static void EliminarPaciente(List<Paciente> lista, Dictionary<int, Paciente> diccionario)
+    // TASK 3: Agregar mascota a un paciente existente
+    public static void AgregarMascotaAPaciente(List<Paciente> lista)
     {
-        Console.WriteLine("\n--- ELIMINAR PACIENTE ---");
-        int id = LeerEntero("Ingrese el ID del paciente a eliminar: ");
-
-        if (diccionario.TryGetValue(id, out var paciente))
-        {
-            lista.Remove(paciente);
-            diccionario.Remove(id);
-            Console.WriteLine($"Paciente con ID {id} eliminado correctamente.");
-        }
-        else
-        {
-            Console.WriteLine($"No se encontró ningún paciente con el ID {id}.");
-        }
-    }
-
-    public static void ListarPacientes(List<Paciente> lista)
-    {
-        Console.WriteLine("\n--- LISTA DE PACIENTES REGISTRADOS ---");
-
-        if (!lista.Any()) // Uso de LINQ: Any() para verificar si la colección contiene elementos
+        Console.WriteLine("\n--- ASOCIAR NUEVA MASCOTA A PACIENTE EXISTENTE ---");
+        if (!lista.Any())
         {
             Console.WriteLine("No hay pacientes registrados.");
             return;
         }
 
-        foreach (var p in lista)
-        {
-            Console.WriteLine($"ID: {p.Id} | Dueño: {p.Nombre} (Edad: {p.Edad}, Tel: {p.Telefono}) | Mascota: {p.NombreMascota} | Especie: {p.Especie} | Raza: {p.Raza} | Síntoma: {p.Sintoma}");
-        }
-    }
+        int id = LeerEntero("Ingrese el ID del paciente/dueño: ");
+        var paciente = lista.FirstOrDefault(p => p.Id == id);
 
-    public static void BuscarPorIdEnDiccionario(Dictionary<int, Paciente> diccionario)
-    {
-        Console.WriteLine("\n--- BÚSQUEDA RÁPIDA POR ID (DICTIONARY) ---");
-        int id = LeerEntero("Ingrese el ID a consultar: ");
-
-        if (diccionario.TryGetValue(id, out var p))
+        if (paciente == null)
         {
-            Console.WriteLine($"[Encontrado en Diccionario] ID: {p.Id} | Dueño: {p.Nombre} | Tel: {p.Telefono} | Mascota: {p.NombreMascota} ({p.Especie}) | Síntoma: {p.Sintoma}");
-        }
-        else
-        {
-            Console.WriteLine($"No existe paciente con el ID {id}.");
-        }
-    }
-
-    // ==========================================
-    // TASK 2, 4 Y 5: CONSULTAS CON LINQ
-    // ==========================================
-
-    public static void EjecutarConsultasLinq(List<Paciente> lista)
-    {
-        if (!lista.Any())
-        {
-            Console.WriteLine("\nDebe registrar al menos un paciente para realizar consultas LINQ.");
+            Console.WriteLine($"No se encontró ningún paciente con el ID {id}.");
             return;
         }
 
+        Console.WriteLine($"Agregando mascota a: {paciente.Nombre}");
+        Mascota nuevaMascota = CrearMascotaDesdeConsola();
+        paciente.AgregarMascota(nuevaMascota);
+        nuevaMascota.Registrar();
+
+        Console.WriteLine($"¡Mascota '{nuevaMascota.Nombre}' agregada con éxito al paciente {paciente.Nombre}!");
+    }
+
+    // TASK 2 y 3: Mostrar información estructurada
+    public static void ListarPacientesYMascotas(List<Paciente> lista)
+    {
         Console.WriteLine("\n==========================================");
-        Console.WriteLine("        REPORTES Y CONSULTAS CON LINQ     ");
+        Console.WriteLine("       LISTA DE PACIENTES Y MASCOTAS      ");
         Console.WriteLine("==========================================");
 
-        // --- TASK 2: Comparación Sintaxis de Consulta vs Sintaxis de Métodos ---
-        Console.WriteLine("\n1. [Sintaxis de Consulta] Pacientes mayores de 25 años:");
-        // Sintaxis de consulta (Query Syntax): from ... where ... select
-        var consultaEdad = from p in lista
-                           where p.Edad > 25
-                           select p;
-        foreach (var p in consultaEdad)
-            Console.WriteLine($"   - {p.Nombre} ({p.Edad} años)");
-
-        Console.WriteLine("\n2. [Sintaxis de Métodos] Pacientes con mascotas ordenados descendentemente por edad:");
-        // Sintaxis de métodos con OrderByDescending y Select
-        var metodosOrden = lista
-            .OrderByDescending(p => p.Edad)
-            .Select(p => new { p.Nombre, p.Edad, p.NombreMascota });
-        foreach (var item in metodosOrden)
-            Console.WriteLine($"   - Dueño: {item.Nombre}, Edad: {item.Edad}, Mascota: {item.NombreMascota}");
-
-        // --- TASK 4: Consultas encadenadas ---
-        Console.WriteLine("\n3. [Consulta Encadenada] Pacientes con especie 'Perro', ordenados por edad (solo Nombre y Teléfono):");
-        // Encadenamiento de Where + OrderBy + Select
-        var perrosOrdenados = lista
-            .Where(p => p.Especie.Equals("Perro", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(p => p.Edad)
-            .Select(p => new { p.Nombre, p.Telefono, p.Edad });
-
-        if (perrosOrdenados.Any())
+        if (!lista.Any())
         {
-            foreach (var item in perrosOrdenados)
-                Console.WriteLine($"   - Dueño: {item.Nombre} | Tel: {item.Telefono} | Edad: {item.Edad}");
+            Console.WriteLine("No hay registros en el sistema.");
+            return;
+        }
+
+        foreach (var paciente in lista)
+        {
+            paciente.MostrarInformacion();
+        }
+    }
+
+    // TASK 5: Demostración de Polimorfismo con EmitirSonido()
+    public static void DemostrarPolimorfismoSonidos(List<Paciente> lista)
+    {
+        Console.WriteLine("\n==========================================");
+        Console.WriteLine("    DEMOSTRACIÓN DE POLIMORFISMO (POO)    ");
+        Console.WriteLine("==========================================");
+
+        var todasLasMascotas = lista.SelectMany(p => p.Mascotas).ToList();
+
+        if (!todasLasMascotas.Any())
+        {
+            Console.WriteLine("No hay mascotas registradas para emitir sonidos.");
+            return;
+        }
+
+        Console.WriteLine("Invocando método polimórfico EmitirSonido() desde la jerarquía Animal -> Mascota:\n");
+
+        foreach (Animal animal in todasLasMascotas)
+        {
+            Console.WriteLine($" -> {animal.Nombre} ({animal.Especie}): {animal.EmitirSonido()}");
+        }
+    }
+
+    // TASK 6: Demostración de Abstracción con ServicioVeterinario (ConsultaGeneral / Vacunacion)
+    public static void DemostrarServiciosVeterinarios(List<Paciente> lista)
+    {
+        Console.WriteLine("\n==========================================");
+        Console.WriteLine("    DEMOSTRACIÓN DE ABSTRACCIÓN Y CLASES  ");
+        Console.WriteLine("==========================================");
+
+        if (!lista.Any() || !lista.Any(p => p.Mascotas.Any()))
+        {
+            Console.WriteLine("Debe haber al menos un paciente con mascota para realizar una atención médica.");
+            return;
+        }
+
+        int id = LeerEntero("Ingrese el ID del paciente/dueño: ");
+        var paciente = lista.FirstOrDefault(p => p.Id == id);
+
+        if (paciente == null || !paciente.Mascotas.Any())
+        {
+            Console.WriteLine("Paciente no encontrado o sin mascotas registradas.");
+            return;
+        }
+
+        var mascota = paciente.Mascotas.First();
+
+        Console.WriteLine("\nSeleccione el servicio veterinario:");
+        Console.WriteLine("1. Consulta General");
+        Console.WriteLine("2. Vacunación");
+        Console.Write("Opción: ");
+        string? opcion = Console.ReadLine();
+
+        ServicioVeterinario servicio;
+
+        if (opcion == "2")
+        {
+            string vacuna = LeerTextoNoVacio("Nombre de la vacuna (ej. Antirrábica, Séxtuple): ");
+            servicio = new Vacunacion(vacuna);
         }
         else
         {
-            Console.WriteLine("   - No hay pacientes con especie 'Perro'.");
+            string motivo = LeerTextoNoVacio("Motivo de la consulta / diagnóstico preliminar: ");
+            servicio = new ConsultaGeneral { Diagnostico = motivo };
         }
 
-        // --- TASK 5: Problemas prácticos con LINQ ---
-
-        // A. Paciente más joven y paciente de mayor edad (First / OrderBy)
-        var masJoven = lista.OrderBy(p => p.Edad).First();
-        var mayorEdad = lista.OrderByDescending(p => p.Edad).First();
-        Console.WriteLine($"\n4. Paciente más joven: {masJoven.Nombre} ({masJoven.Edad} años)");
-        Console.WriteLine($"   Paciente de mayor edad: {mayorEdad.Nombre} ({mayorEdad.Edad} años)");
-
-        // B. Contar cuántas mascotas hay por cada especie (GroupBy + Count)
-        Console.WriteLine("\n5. Cantidad de mascotas por especie (GroupBy + Count):");
-        var conteoPorEspecie = lista
-            .GroupBy(p => p.Especie, StringComparer.OrdinalIgnoreCase)
-            .Select(grupo => new { Especie = grupo.Key, Total = grupo.Count() });
-
-        foreach (var grupo in conteoPorEspecie)
-            Console.WriteLine($"   - Especie: {grupo.Especie} -> {grupo.Total} mascota(s)");
-
-        // C. Verificar si existe al menos un paciente con mascota sin raza (Any) y si todos tienen teléfono (All)
-        bool existeSinRaza = lista.Any(p => p.Raza.Equals("Sin raza", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(p.Raza));
-        bool todosConTelefono = lista.All(p => !string.IsNullOrWhiteSpace(p.Telefono));
-        Console.WriteLine($"\n6. ¿Existe alguna mascota sin raza definida? (Any): {(existeSinRaza ? "Sí" : "No")}");
-        Console.WriteLine($"   ¿Todos los pacientes tienen teléfono registrado? (All): {(todosConTelefono ? "Sí" : "No")}");
-
-        // D. Listar nombres en mayúsculas ordenados alfabéticamente (Select + OrderBy)
-        Console.WriteLine("\n7. Nombres de dueños en mayúsculas y orden alfabético:");
-        var nombresOrdenados = lista
-            .Select(p => p.Nombre.ToUpper())
-            .OrderBy(n => n);
-
-        foreach (var nombre in nombresOrdenados)
-            Console.WriteLine($"   - {nombre}");
+        // Llamada polimórfica al método abstracto Atender
+        servicio.Atender(paciente, mascota);
     }
 
-    // ==========================================
-    // MÉTODOS AUXILIARES Y VALIDACIONES (TASK 7 / Robustez)
-    // ==========================================
+    // TASK 6: Demostración de uso de Interfaces (IRegistrable)
+    public static void DemostrarInterfazRegistrable(List<Paciente> lista)
+    {
+        Console.WriteLine("\n==========================================");
+        Console.WriteLine("    DEMOSTRACIÓN DE INTERFAZ IRegistrable ");
+        Console.WriteLine("==========================================");
+
+        List<IRegistrable> registrables = new List<IRegistrable>();
+
+        foreach (var p in lista)
+        {
+            registrables.Add(p);
+            foreach (var m in p.Mascotas)
+            {
+                registrables.Add(m);
+            }
+        }
+
+        Console.WriteLine($"Procesando {registrables.Count} elementos que implementan IRegistrable:\n");
+        foreach (var item in registrables)
+        {
+            item.Registrar();
+        }
+    }
+
+    // Métodos auxiliares
+    private static Mascota CrearMascotaDesdeConsola()
+    {
+        string nombreMascota = LeerTextoNoVacio("Nombre de la mascota: ");
+        string especie = LeerTextoNoVacio("Especie (ej. Perro, Gato, Loro): ");
+        Console.Write("Raza (opcional): ");
+        string raza = Console.ReadLine()?.Trim() ?? string.Empty;
+        int edadMascota = LeerEntero("Edad de la mascota (en años): ");
+
+        return new Mascota(nombreMascota, edadMascota, especie, string.IsNullOrWhiteSpace(raza) ? "Sin raza" : raza);
+    }
 
     private static string LeerTextoNoVacio(string mensaje)
     {
