@@ -3,8 +3,11 @@ using System.Collections.Generic;
 
 namespace ClinicaSalud.Models;
 
-// TASK 2 y 4: Encapsulación y constructores. TASK 6: Implementación de IRegistrable
-public class Paciente : IRegistrable
+/*
+ * TASK 3: Implementación de múltiples interfaces (IRegistrable e INotificable)
+ * - Muestra la flexibilidad de C# donde una clase puede asumir múltiples contratos de comportamiento.
+ */
+public class Paciente : IRegistrable, INotificable
 {
     private int _id;
     private string _nombre = string.Empty;
@@ -36,14 +39,12 @@ public class Paciente : IRegistrable
         set => _direccion = !string.IsNullOrWhiteSpace(value) ? value.Trim() : "No especificada";
     }
 
-    // Datos protegidos / encapsulados
     public string Telefono
     {
         get => _telefono;
         set => _telefono = !string.IsNullOrWhiteSpace(value) ? value.Trim() : "Sin teléfono";
     }
 
-    // TASK 3: Asociación 1 a N (un paciente puede tener una o varias mascotas)
     public List<Mascota> Mascotas { get; set; } = new List<Mascota>();
 
     public Paciente() { }
@@ -65,7 +66,6 @@ public class Paciente : IRegistrable
         }
     }
 
-    // TASK 2: Método para mostrar información del paciente y sus mascotas
     public void MostrarInformacion()
     {
         Console.WriteLine($"\n[Paciente ID: {Id}] Dueño: {Nombre} | Edad: {Edad} años | Teléfono: {Telefono} | Dirección: {Direccion}");
@@ -83,9 +83,15 @@ public class Paciente : IRegistrable
         }
     }
 
-    // TASK 6: Implementación de IRegistrable
+    // TASK 2: Implementación de IRegistrable
     public void Registrar()
     {
         Console.WriteLine($"[Registro IRegistrable] Paciente (Dueño) '{Nombre}' (ID: {Id}) registrado con {Mascotas.Count} mascota(s).");
+    }
+
+    // TASK 3: Implementación de INotificable
+    public void EnviarNotificacion(string mensaje)
+    {
+        Console.WriteLine($"\n[Notificación SMS/Email a {Telefono} ({Nombre})]: \"{mensaje}\"");
     }
 }

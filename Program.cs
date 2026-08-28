@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using ClinicaSalud.Models;
 using ClinicaSalud.Services;
 
-// Datos de prueba iniciales (TASK 3: Instanciación y relaciones 1 a N)
+// Datos de prueba iniciales
 var paciente1 = new Paciente(1, "Carlos Perez", 28, "Av. Central 123", "555-1234");
 paciente1.AgregarMascota(new Mascota("Rocky", 3, "Perro", "Labrador"));
 paciente1.AgregarMascota(new Mascota("Michi", 2, "Gato", "Siamés"));
@@ -18,14 +18,14 @@ bool salir = false;
 while (!salir)
 {
     Console.WriteLine("\n==========================================");
-    Console.WriteLine("  CLÍNICA VETERINARIA SALUD+ (POO / UML)  ");
+    Console.WriteLine("  CLÍNICA VETERINARIA SALUD+ (SEMANA 4)   ");
     Console.WriteLine("==========================================");
-    Console.WriteLine("1. Registrar paciente (dueño) y mascota(s)");
-    Console.WriteLine("2. Agregar mascota a paciente existente");
-    Console.WriteLine("3. Listar pacientes y sus mascotas");
-    Console.WriteLine("4. Probar Polimorfismo (EmitirSonido en Animales)");
-    Console.WriteLine("5. Probar Abstracción (Servicios Veterinarios)");
-    Console.WriteLine("6. Probar Interfaz (IRegistrable)");
+    Console.WriteLine("1. Registrar paciente y mascota(s) (IRegistrable)");
+    Console.WriteLine("2. Listar todos los pacientes y mascotas");
+    Console.WriteLine("3. Buscar mascota (Prueba MascotaNoEncontradaException)");
+    Console.WriteLine("4. Atender servicio veterinario (IAtendible)");
+    Console.WriteLine("5. Enviar recordatorio de cita (INotificable)");
+    Console.WriteLine("6. Ejecutar prueba de depuración (Breakpoints / DivideByZero)");
     Console.WriteLine("7. Salir");
     Console.Write("Seleccione una opción: ");
 
@@ -37,19 +37,19 @@ while (!salir)
             PacienteService.RegistrarPaciente(pacientes);
             break;
         case "2":
-            PacienteService.AgregarMascotaAPaciente(pacientes);
+            PacienteService.ListarPacientes(pacientes);
             break;
         case "3":
-            PacienteService.ListarPacientesYMascotas(pacientes);
+            PacienteService.BuscarMascotaPorNombre(pacientes);
             break;
         case "4":
-            PacienteService.DemostrarPolimorfismoSonidos(pacientes);
+            PacienteService.AtenderServicioVeterinario(pacientes);
             break;
         case "5":
-            PacienteService.DemostrarServiciosVeterinarios(pacientes);
+            PacienteService.EnviarRecordatorioCita(pacientes);
             break;
         case "6":
-            PacienteService.DemostrarInterfazRegistrable(pacientes);
+            PacienteService.ProbarEscenarioDepuracion();
             break;
         case "7":
             salir = true;

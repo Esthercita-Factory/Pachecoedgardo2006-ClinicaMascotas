@@ -7,73 +7,217 @@ namespace ClinicaSalud.Services;
 
 public static class PacienteService
 {
-    // TASK 2 y 3: Registro de paciente con mascota(s)
+    // TASK 2 y 5: Registrar paciente con try-catch-finally y validaciones
     public static void RegistrarPaciente(List<Paciente> lista)
     {
-        Console.WriteLine("\n--- REGISTRO DE NUEVO PACIENTE (DUEÑO) ---");
+        Console.WriteLine("\n--- REGISTRO DE NUEVO PACIENTE Y MASCOTA ---");
 
-        string nombre = LeerTextoNoVacio("Nombre del paciente/dueño: ");
-        int edad = LeerEntero("Edad: ");
-        string direccion = LeerTextoNoVacio("Dirección: ");
-        string telefono = LeerTextoNoVacio("Teléfono de contacto: ");
-
-        int nuevoId = lista.Count > 0 ? lista.Max(p => p.Id) + 1 : 1;
-
-        var paciente = new Paciente(nuevoId, nombre, edad, direccion, telefono);
-
-        Console.WriteLine("\n--- DATOS DE LA MASCOTA PRINCIPAL ---");
-        Mascota mascota = CrearMascotaDesdeConsola();
-        paciente.AgregarMascota(mascota);
-
-        // Opción para registrar más mascotas al mismo dueño
-        Console.Write("¿Desea agregar otra mascota para este paciente? (s/n): ");
-        if (Console.ReadLine()?.Trim().ToLower() == "s")
+        try
         {
-            Mascota otraMascota = CrearMascotaDesdeConsola();
-            paciente.AgregarMascota(otraMascota);
+            string nombre = LeerTextoNoVacio("Nombre del paciente/dueño: ");
+            int edad = LeerEntero("Edad: ");
+            string direccion = LeerTextoNoVacio("Dirección: ");
+            string telefono = LeerTextoNoVacio("Teléfono de contacto: ");
+
+            int nuevoId = lista.Count > 0 ? lista.Max(p => p.Id) + 1 : 1;
+            var paciente = new Paciente(nuevoId, nombre, edad, direccion, telefono);
+
+            Console.WriteLine("\n--- DATOS DE LA MASCOTA PRINCIPAL ---");
+            Mascota mascota = CrearMascotaDesdeConsola();
+            paciente.AgregarMascota(mascota);
+
+            Console.Write("¿Desea registrar una mascota adicional? (s/n): ");
+            if (Console.ReadLine()?.Trim().ToLower() == "s")
+            {
+                Mascota otraMascota = CrearMascotaDesdeConsola();
+                paciente.AgregarMascota(otraMascota);
+            }
+
+            lista.Add(paciente);
+
+            // TASK 2: Invocación polimórfica de IRegistrable
+            paciente.Registrar();
+            foreach (var m in paciente.Mascotas)
+            {
+                m.Registrar();
+            }
+
+            LoggerService.LogInfo($"Paciente #{paciente.Id} registrado exitosamente.");
+            Console.WriteLine($"\n¡Paciente #{paciente.Id} guardado con éxito!");
         }
-
-        lista.Add(paciente);
-
-        // TASK 6: Demostración de interfaz IRegistrable al registrar
-        paciente.Registrar();
-        foreach (var m in paciente.Mascotas)
+        catch (Exception ex)
         {
-            m.Registrar();
+            LoggerService.LogError("Error durante el registro del paciente.", ex);
+            Console.WriteLine($"[Error al registrar]: {ex.Message}");
         }
-
-        Console.WriteLine($"\n¡Paciente #{paciente.Id} y mascota(s) registrados exitosamente!");
+        finally
+        {
+            Console.WriteLine("[Fin del proceso de registro]");
+        }
     }
 
-    // TASK 3: Agregar mascota a un paciente existente
-    public static void AgregarMascotaAPaciente(List<Paciente> lista)
+    // TASK 5: Buscar mascota con excepción personalizada MascotaNoEncontradaException
+    public static void BuscarMascotaPorNombre(List<Paciente> lista)
     {
-        Console.WriteLine("\n--- ASOCIAR NUEVA MASCOTA A PACIENTE EXISTENTE ---");
-        if (!lista.Any())
+        Console.WriteLine("\n--- BÚSQUEDA DE MASCOTA POR NOMBRE ---");
+        Console.Write("Ingrese el nombre de la mascota a buscar: ");
+        string? nombreBuscado = Console.ReadLine();
+
+        try
         {
-            Console.WriteLine("No hay pacientes registrados.");
-            return;
+            if (string.IsNullOrWhiteSpace(nombreBuscado))
+            {
+                throw new ArgumentException("El nombre de la mascota no puede estar vacío.");
+            }
+
+            var pacienteDueño = lista.FirstOrDefault(p => p.Mascotas.Any(m => m.Nombre.Equals(nombreBuscado.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+            if (pacienteDueño == null)
+            {
+                // TASK 5: Lanzamiento de excepción personalizada
+                throw new MascotaNoEncontradaException(nombreBuscado.Trim());
+            }
+
+            var mascotaEncontrada = pacienteDueño.Mascotas.First(m => m.Nombre.Equals(nombreBuscado.Trim(), StringComparison.OrdinalIgnoreCase));
+
+            Console.WriteLine("\n[Mascota Encontrada]");
+            mascotaEncontrada.MostrarInformacion();
+            Console.WriteLine($"Dueño responsable: {pacienteDueño.Nombre} (Tel: {pacienteDueño.Telefono})");
         }
-
-        int id = LeerEntero("Ingrese el ID del paciente/dueño: ");
-        var paciente = lista.FirstOrDefault(p => p.Id == id);
-
-        if (paciente == null)
+        catch (MascotaNoEncontradaException ex)
         {
-            Console.WriteLine($"No se encontró ningún paciente con el ID {id}.");
-            return;
+            LoggerService.LogError($"Búsqueda fallida de mascota: {ex.NombreMascotaBuscada}", ex);
+            Console.WriteLine($"[Aviso]: {ex.Message}");
         }
-
-        Console.WriteLine($"Agregando mascota a: {paciente.Nombre}");
-        Mascota nuevaMascota = CrearMascotaDesdeConsola();
-        paciente.AgregarMascota(nuevaMascota);
-        nuevaMascota.Registrar();
-
-        Console.WriteLine($"¡Mascota '{nuevaMascota.Nombre}' agregada con éxito al paciente {paciente.Nombre}!");
+        catch (Exception ex)
+        {
+            LoggerService.LogError("Error inesperado en búsqueda de mascota.", ex);
+            Console.WriteLine($"[Error]: {ex.Message}");
+        }
+        finally
+        {
+            Console.WriteLine("[Búsqueda finalizada]");
+        }
     }
 
-    // TASK 2 y 3: Mostrar información estructurada
-    public static void ListarPacientesYMascotas(List<Paciente> lista)
+    // TASK 3: Demostrar interfaz INotificable
+    public static void EnviarRecordatorioCita(List<Paciente> lista)
+    {
+        Console.WriteLine("\n--- ENVIAR RECORDATORIO DE CITA (INotificable) ---");
+        int id = LeerEntero("Ingrese el ID del paciente/dueño a notificar: ");
+
+        try
+        {
+            var paciente = lista.FirstOrDefault(p => p.Id == id);
+            if (paciente == null)
+            {
+                throw new PacienteNoEncontradoException(id);
+            }
+
+            string mensaje = $"Estimado/a {paciente.Nombre}, le recordamos la cita médica de su mascota para el día de mañana.";
+
+            // Invocación a través de la interfaz INotificable
+            INotificable canalNotificacion = paciente;
+            canalNotificacion.EnviarNotificacion(mensaje);
+
+            LoggerService.LogInfo($"Notificación enviada a paciente #{id}.");
+        }
+        catch (PacienteNoEncontradoException ex)
+        {
+            LoggerService.LogError($"Fallo al enviar notificación: Paciente ID {ex.IdBuscado} no existe.", ex);
+            Console.WriteLine($"[Aviso]: {ex.Message}");
+        }
+        finally
+        {
+            Console.WriteLine("[Proceso de notificación concluido]");
+        }
+    }
+
+    // TASK 2: Demostrar interfaz IAtendible con servicios veterinarios
+    public static void AtenderServicioVeterinario(List<Paciente> lista)
+    {
+        Console.WriteLine("\n--- ATENCIÓN DE SERVICIO VETERINARIO (IAtendible) ---");
+        int id = LeerEntero("Ingrese el ID del paciente/dueño: ");
+
+        try
+        {
+            var paciente = lista.FirstOrDefault(p => p.Id == id);
+            if (paciente == null)
+            {
+                throw new PacienteNoEncontradoException(id);
+            }
+
+            if (!paciente.Mascotas.Any())
+            {
+                throw new InvalidOperationException($"El paciente {paciente.Nombre} no tiene mascotas registradas.");
+            }
+
+            var mascota = paciente.Mascotas.First();
+
+            Console.WriteLine("\nSeleccione el servicio veterinario:");
+            Console.WriteLine("1. Consulta General ($35.00)");
+            Console.WriteLine("2. Vacunación ($25.00)");
+            Console.Write("Opción: ");
+            string? opcion = Console.ReadLine();
+
+            // Uso polimórfico de la interfaz IAtendible
+            IAtendible servicio = opcion == "2"
+                ? new Vacunacion(LeerTextoNoVacio("Nombre de la vacuna aplicada: "))
+                : new ConsultaGeneral { Diagnostico = LeerTextoNoVacio("Diagnóstico / Motivo de consulta: ") };
+
+            servicio.Atender(paciente, mascota);
+            LoggerService.LogInfo($"Servicio '{servicio.NombreServicio}' atendido para mascota '{mascota.Nombre}'.");
+        }
+        catch (PacienteNoEncontradoException ex)
+        {
+            LoggerService.LogError($"Fallo al atender servicio: {ex.Message}", ex);
+            Console.WriteLine($"[Aviso]: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            LoggerService.LogError("Error durante la atención médica.", ex);
+            Console.WriteLine($"[Error]: {ex.Message}");
+        }
+        finally
+        {
+            Console.WriteLine("[Atención médica finalizada]");
+        }
+    }
+
+    // TASK 4: Escenario de depuración (Breakpoints e inspección de variables)
+    public static void ProbarEscenarioDepuracion()
+    {
+        Console.WriteLine("\n==========================================");
+        Console.WriteLine("     ESCENARIO DE DEPURACIÓN Y DEBUG      ");
+        Console.WriteLine("==========================================");
+        Console.WriteLine("-> Coloque un Breakpoint (Punto de interrupción) en la siguiente línea:");
+        Console.WriteLine("   int totalPacientes = 10;");
+
+        // Breakpoint sugerido aquí:
+        int totalPacientes = 10;
+        int divisor = 0; // Provocamos división por cero controlada para depurar
+
+        Console.WriteLine($"Variables actuales en memoria: totalPacientes = {totalPacientes}, divisor = {divisor}");
+
+        try
+        {
+            Console.WriteLine("Calculando promedio de atención (totalPacientes / divisor)...");
+            int promedio = totalPacientes / divisor; // Lanza DivideByZeroException
+            Console.WriteLine($"Promedio calculado: {promedio}");
+        }
+        catch (DivideByZeroException ex)
+        {
+            LoggerService.LogError("Error de división por cero detectado y controlado en modo depuración.", ex);
+            Console.WriteLine($"\n[Excepción capturada con éxito]: {ex.GetType().Name} -> {ex.Message}");
+            Console.WriteLine("[Depuración]: Se ha verificado que el divisor era 0 antes de realizar la operación.");
+        }
+        finally
+        {
+            Console.WriteLine("[Bloque finally ejecutado tras la depuración]");
+        }
+    }
+
+    public static void ListarPacientes(List<Paciente> lista)
     {
         Console.WriteLine("\n==========================================");
         Console.WriteLine("       LISTA DE PACIENTES Y MASCOTAS      ");
@@ -81,116 +225,21 @@ public static class PacienteService
 
         if (!lista.Any())
         {
-            Console.WriteLine("No hay registros en el sistema.");
+            Console.WriteLine("No hay pacientes registrados.");
             return;
         }
-
-        foreach (var paciente in lista)
-        {
-            paciente.MostrarInformacion();
-        }
-    }
-
-    // TASK 5: Demostración de Polimorfismo con EmitirSonido()
-    public static void DemostrarPolimorfismoSonidos(List<Paciente> lista)
-    {
-        Console.WriteLine("\n==========================================");
-        Console.WriteLine("    DEMOSTRACIÓN DE POLIMORFISMO (POO)    ");
-        Console.WriteLine("==========================================");
-
-        var todasLasMascotas = lista.SelectMany(p => p.Mascotas).ToList();
-
-        if (!todasLasMascotas.Any())
-        {
-            Console.WriteLine("No hay mascotas registradas para emitir sonidos.");
-            return;
-        }
-
-        Console.WriteLine("Invocando método polimórfico EmitirSonido() desde la jerarquía Animal -> Mascota:\n");
-
-        foreach (Animal animal in todasLasMascotas)
-        {
-            Console.WriteLine($" -> {animal.Nombre} ({animal.Especie}): {animal.EmitirSonido()}");
-        }
-    }
-
-    // TASK 6: Demostración de Abstracción con ServicioVeterinario (ConsultaGeneral / Vacunacion)
-    public static void DemostrarServiciosVeterinarios(List<Paciente> lista)
-    {
-        Console.WriteLine("\n==========================================");
-        Console.WriteLine("    DEMOSTRACIÓN DE ABSTRACCIÓN Y CLASES  ");
-        Console.WriteLine("==========================================");
-
-        if (!lista.Any() || !lista.Any(p => p.Mascotas.Any()))
-        {
-            Console.WriteLine("Debe haber al menos un paciente con mascota para realizar una atención médica.");
-            return;
-        }
-
-        int id = LeerEntero("Ingrese el ID del paciente/dueño: ");
-        var paciente = lista.FirstOrDefault(p => p.Id == id);
-
-        if (paciente == null || !paciente.Mascotas.Any())
-        {
-            Console.WriteLine("Paciente no encontrado o sin mascotas registradas.");
-            return;
-        }
-
-        var mascota = paciente.Mascotas.First();
-
-        Console.WriteLine("\nSeleccione el servicio veterinario:");
-        Console.WriteLine("1. Consulta General");
-        Console.WriteLine("2. Vacunación");
-        Console.Write("Opción: ");
-        string? opcion = Console.ReadLine();
-
-        ServicioVeterinario servicio;
-
-        if (opcion == "2")
-        {
-            string vacuna = LeerTextoNoVacio("Nombre de la vacuna (ej. Antirrábica, Séxtuple): ");
-            servicio = new Vacunacion(vacuna);
-        }
-        else
-        {
-            string motivo = LeerTextoNoVacio("Motivo de la consulta / diagnóstico preliminar: ");
-            servicio = new ConsultaGeneral { Diagnostico = motivo };
-        }
-
-        // Llamada polimórfica al método abstracto Atender
-        servicio.Atender(paciente, mascota);
-    }
-
-    // TASK 6: Demostración de uso de Interfaces (IRegistrable)
-    public static void DemostrarInterfazRegistrable(List<Paciente> lista)
-    {
-        Console.WriteLine("\n==========================================");
-        Console.WriteLine("    DEMOSTRACIÓN DE INTERFAZ IRegistrable ");
-        Console.WriteLine("==========================================");
-
-        List<IRegistrable> registrables = new List<IRegistrable>();
 
         foreach (var p in lista)
         {
-            registrables.Add(p);
-            foreach (var m in p.Mascotas)
-            {
-                registrables.Add(m);
-            }
-        }
-
-        Console.WriteLine($"Procesando {registrables.Count} elementos que implementan IRegistrable:\n");
-        foreach (var item in registrables)
-        {
-            item.Registrar();
+            p.MostrarInformacion();
         }
     }
 
-    // Métodos auxiliares
+    // Validaciones
     private static Mascota CrearMascotaDesdeConsola()
     {
         string nombreMascota = LeerTextoNoVacio("Nombre de la mascota: ");
-        string especie = LeerTextoNoVacio("Especie (ej. Perro, Gato, Loro): ");
+        string especie = LeerTextoNoVacio("Especie (ej. Perro, Gato, Ave): ");
         Console.Write("Raza (opcional): ");
         string raza = Console.ReadLine()?.Trim() ?? string.Empty;
         int edadMascota = LeerEntero("Edad de la mascota (en años): ");

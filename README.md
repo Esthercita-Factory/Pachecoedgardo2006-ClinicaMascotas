@@ -1,14 +1,26 @@
-# Clínica Veterinaria Salud+ (Semana 3)
+# Clínica Veterinaria Salud+ (Semana 4)
 
-Aplicación de consola en .NET enfocada en Programación Orientada a Objetos (POO), Herencia, Polimorfismo, Encapsulación, Abstracción y Diseño UML.
+Aplicación de consola en .NET enfocada en interfaces múltiples, manejo estructurado de excepciones, depuración y sistema de logging.
 
-## Diagrama de Clases UML
+## Diagrama de Clases UML (Actualizado Semana 4)
 
 ```mermaid
 classDiagram
     class IRegistrable {
         <<interface>>
         +Registrar() void
+    }
+
+    class INotificable {
+        <<interface>>
+        +EnviarNotificacion(string mensaje) void
+    }
+
+    class IAtendible {
+        <<interface>>
+        +NombreServicio: string
+        +CostoBase: decimal
+        +Atender(Paciente, Mascota) void
     }
 
     class Animal {
@@ -45,6 +57,7 @@ classDiagram
         +AgregarMascota(Mascota) void
         +MostrarInformacion() void
         +Registrar() void
+        +EnviarNotificacion(string) void
     }
 
     class ServicioVeterinario {
@@ -64,17 +77,42 @@ classDiagram
         +Atender(Paciente, Mascota) void
     }
 
+    class Exception {
+        <<System>>
+    }
+
+    class MascotaNoEncontradaException {
+        +NombreMascotaBuscada: string
+    }
+
+    class PacienteNoEncontradoException {
+        +IdBuscado: int
+    }
+
+    %% Relaciones de herencia e interfaces
     Animal <|-- Mascota : Herencia
     IRegistrable <|.. Mascota : Implementa
     IRegistrable <|.. Paciente : Implementa
-    Paciente "1" o-- "0..*" Mascota : Asociación (Composición)
+    INotificable <|.. Paciente : Implementa (Múltiples Interfaces)
+    Paciente "1" o-- "0..*" Mascota : Asociación
+    IAtendible <|.. ServicioVeterinario : Implementa
     ServicioVeterinario <|-- ConsultaGeneral : Herencia
     ServicioVeterinario <|-- Vacunacion : Herencia
+
+    Exception <|-- MascotaNoEncontradaException : Herencia
+    Exception <|-- PacienteNoEncontradoException : Herencia
 ```
 
-## Conceptos de POO Aplicados
-- **Encapsulación:** Atributos privados con propiedades públicas validadas.
-- **Herencia:** `Mascota` hereda de la clase base `Animal`. `ConsultaGeneral` y `Vacunacion` heredan de `ServicioVeterinario`.
-- **Polimorfismo:** Sobrescritura de `EmitirSonido()` en `Mascota` y `Atender()` en servicios veterinarios.
-- **Abstracción:** Clases abstractas `Animal`, `ServicioVeterinario` e interfaz `IRegistrable`.
-- **Relaciones:** Asociación 1 a N (`Paciente` puede tener múltiples `Mascota`).
+## Novedades y Decisiones de Diseño
+
+### 1. Interfaces vs Clases Abstractas
+- `IRegistrable`: Contrato uniforme para persistencia en consola/memoria (`Paciente` y `Mascota`).
+- `INotificable`: Contrato de comunicación implementado en `Paciente`.
+- `IAtendible`: Contrato desacoplado para servicios veterinarios.
+- `Paciente` implementa **múltiples interfaces** (`IRegistrable` e `INotificable`).
+- `ServicioVeterinario` combina clase base abstracta con la interfaz `IAtendible` para compartir estado (`CostoBase`, `NombreServicio`).
+
+### 2. Manejo de Excepciones y Logging
+- Excepciones de dominio: `MascotaNoEncontradaException` y `PacienteNoEncontradoException`.
+- Bloques `try-catch-finally` en todas las operaciones.
+- `LoggerService`: Registro persistente de errores en el archivo `clinica_errores.log` con fecha/hora y traza de error.
