@@ -15,7 +15,7 @@ while (!salir)
     Console.WriteLine("2. Listar pacientes");
     Console.WriteLine("3. Buscar paciente");
     Console.WriteLine("4. Salir");
-    Console.Write("Seleccione una opción: ");
+    Console.Write("Seleccione Una opción: ");
 
     string? opcion = Console.ReadLine();
 
