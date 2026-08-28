@@ -24,10 +24,11 @@ while (!salir)
     Console.WriteLine("==========================================");
     Console.WriteLine("1. Registrar paciente y mascota (Async / Await)");
     Console.WriteLine("2. Listar todos los pacientes y mascotas");
-    Console.WriteLine("3. Ejecutar procesos clínicos en paralelo (Task.WhenAll)");
+    Console.WriteLine("3. Ejecutar procesos clínicos en paralelo (Task.Run + Task.WhenAll)");
     Console.WriteLine("4. Comparativa de concurrencia (Task.WhenAll vs Task.WhenAny)");
-    Console.WriteLine("5. Simular atención médica concurrente de mascotas");
-    Console.WriteLine("6. Salir");
+    Console.WriteLine("5. Simular registro simultáneo de múltiples mascotas (Task.WhenAll)");
+    Console.WriteLine("6. Simular atención médica concurrente de mascotas en consultorios");
+    Console.WriteLine("7. Salir");
     Console.Write("Seleccione una opción: ");
 
     string? opcion = Console.ReadLine();
@@ -47,9 +48,12 @@ while (!salir)
             await PacienteService.DemostrarWhenAllVsWhenAnyAsync();
             break;
         case "5":
-            await PacienteService.SimularAtencionConcurrenteAsync(listaPacientes);
+            await PacienteService.SimularRegistroMultipleMascotasAsync(listaPacientes);
             break;
         case "6":
+            await PacienteService.SimularAtencionConcurrenteAsync(listaPacientes);
+            break;
+        case "7":
             salir = true;
             Console.WriteLine("Saliendo del sistema...");
             break;
